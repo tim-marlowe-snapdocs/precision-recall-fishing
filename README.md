@@ -4,7 +4,7 @@ A self-contained, zero-dependency HTML teaching game about the precision vs. rec
 tradeoff, built for a non-technical audience. The entire game is `index.html` — open
 it in any browser, no build step.
 
-**Play it:** https://tim-marlowe-snapdocs.github.io/precision-recall-fishing/
+**Play it:** https://tim-marlowe-snapdocs.github.io/the-anglers-dilemma/
 
 ## Editing
 
