@@ -292,6 +292,16 @@
         <p><b style="color:var(--goldh)">That's the whole lesson:</b> a tool (or a threshold) isn't "good" or "bad" on its own. It's good <i>for a cost structure</i>.</p>
       </div>
     </div>
+    <div class="panel" id="lbPanel" style="margin-top:14px; display:none">
+      <h3>🏆 High Scores</h3>
+      <div id="lbEntry" class="row" style="gap:8px; align-items:center; margin-bottom:10px">
+        <input id="lbName" type="text" maxlength="12" placeholder="YOUR INITIALS" autocomplete="off"
+          style="flex:1; min-width:120px; font-family:inherit; font-weight:bold; font-size:13px; text-transform:uppercase; letter-spacing:1px; padding:9px 10px; background:var(--panel); color:var(--text); border:3px solid var(--line); outline:none">
+        <button id="lbSubmit">Submit score</button>
+      </div>
+      <div id="lbStatus" class="readout" style="margin-bottom:8px; display:none"></div>
+      <div id="lbList"></div>
+    </div>
     <div class="actions"><button id="again">Play again ▶</button></div>
   </div>
 </div>
@@ -302,6 +312,12 @@
 const MAXD = 60;              // max depth in feet
 const TANK = {w:600, h:420, pad:36}; // canvas logical size + left ruler pad
 const FPX = 3;                // pixel size for fish sprites
+
+// Leaderboard (Supabase). Paste your Project URL + anon public key below.
+// Leave as-is to run the game with the leaderboard hidden (offline mode).
+const SUPABASE_URL      = "https://lvcavhfmbzrjqsmvjebe.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx2Y2F2aGZtYnpyanFzbXZqZWJlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE4NDEwOTAsImV4cCI6MjEwNzQxNzA5MH0.GfI7_wUqjMWX9un5mKpeRHPcdYplzLZ1mrgwUq5FKgc";
+const LB_ON = !SUPABASE_URL.includes("YOUR-PROJECT") && !SUPABASE_ANON_KEY.includes("YOUR-ANON");
 
 // W = horizontal extent (boat axis), H = depth extent. Each rig = a distinct box SHAPE.
 const TOOLS = [
@@ -687,6 +703,52 @@ function drawScatter(){
 function show(id){ document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("show")); if(id) $(id).classList.add("show"); }
 function hideAll(){ document.querySelectorAll(".overlay").forEach(o=>o.classList.remove("show")); }
 
+//////////////////// LEADERBOARD ////////////////////
+let lbSubmitted=false;
+const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function lbStatus(msg,kind){ const el=$("lbStatus"); if(!msg){el.style.display="none";return;}
+  el.style.display="block"; el.style.color=kind==="err"?"var(--red)":kind==="ok"?"var(--green)":"var(--dim)";
+  el.textContent=msg; }
+async function lbFetch(){
+  const url=`${SUPABASE_URL}/rest/v1/scores?select=name,score&order=score.desc&limit=10`;
+  const r=await fetch(url,{headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`}});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  return r.json();
+}
+function lbRender(rows){
+  if(!rows.length){ $("lbList").innerHTML='<div class="readout" style="color:var(--dim)">No scores yet — be the first.</div>'; return; }
+  $("lbList").innerHTML=rows.map((row,i)=>{
+    const medal=i===0?"🥇":i===1?"🥈":i===2?"🥉":`<span style="color:var(--dim)">${i+1}.</span>`;
+    return `<div class="readout" style="padding:4px 0; border-bottom:1px dotted var(--line); font-size:13px">`
+      +`<span><b style="color:var(--goldh)">${medal}</b> ${esc(row.name)}</span>`
+      +`<b style="color:var(--gold)">${row.score}</b></div>`;
+  }).join("");
+}
+async function lbLoad(){
+  if(!LB_ON){ $("lbPanel").style.display="none"; return; }
+  $("lbPanel").style.display="block";
+  $("lbEntry").style.display=lbSubmitted?"none":"flex";
+  lbStatus(null);
+  try{ lbRender(await lbFetch()); }
+  catch(e){ $("lbList").innerHTML=""; lbStatus("Couldn't load scores.","err"); }
+}
+async function lbSubmit(){
+  const name=$("lbName").value.trim();
+  if(!name){ lbStatus("Enter your initials first.","err"); $("lbName").focus(); return; }
+  $("lbSubmit").disabled=true; lbStatus("Saving…");
+  try{
+    const r=await fetch(`${SUPABASE_URL}/rest/v1/scores`,{
+      method:"POST",
+      headers:{apikey:SUPABASE_ANON_KEY,Authorization:`Bearer ${SUPABASE_ANON_KEY}`,
+               "Content-Type":"application/json",Prefer:"return=minimal"},
+      body:JSON.stringify({name:name.slice(0,12),score:total})
+    });
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    lbSubmitted=true; $("lbEntry").style.display="none";
+    lbStatus("Saved! 🎣","ok"); lbRender(await lbFetch());
+  }catch(e){ $("lbSubmit").disabled=false; lbStatus("Save failed — try again.","err"); }
+}
+
 //////////////////// EVENTS ////////////////////
 $("start").onclick=()=>{ roundIdx=0; total=0; history=[]; startRound(); };
 $("introGo").onclick=()=> hideAll();
@@ -711,10 +773,13 @@ $("retry").onclick=()=>{
 $("next").onclick=()=>{
   if(roundIdx===ROUNDS.length-1){
     $("finalScore").textContent=total; drawScatter(); show("sumOv");
+    lbSubmitted=false; $("lbSubmit").disabled=false; $("lbName").value=""; lbLoad();
   }else{
     roundIdx++; startRound();
   }
 };
+$("lbSubmit").onclick=lbSubmit;
+$("lbName").onkeydown=e=>{ if(e.key==="Enter") lbSubmit(); };
 $("again").onclick=()=>{ roundIdx=0; total=0; history=[]; hideAll(); $("titleOv").classList.add("show"); };
 
 //////////////////// BOOT ////////////////////
