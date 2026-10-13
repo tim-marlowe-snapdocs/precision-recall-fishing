@@ -109,6 +109,12 @@
   .metric b{font-size:18px; color:var(--goldh)}
   .insight{border:4px solid var(--gold); background:#1a1403; padding:10px; font-size:13px; line-height:1.5; margin:10px 0; text-transform:none; letter-spacing:0}
   .insight b{color:var(--goldh)}
+  .snapdocs{border:4px solid var(--cyan); background:#0e2233; padding:10px 12px; margin:10px 0; text-transform:none; letter-spacing:0}
+  .snapdocs h4{margin:0 0 6px; color:var(--cyan); font-size:12px; letter-spacing:1px; text-transform:uppercase}
+  .snapdocs ul{list-style:none; margin:0; padding:0}
+  .snapdocs li{font-size:13px; line-height:1.5; color:var(--text); padding:4px 0 4px 20px; position:relative}
+  .snapdocs li:before{content:"▸"; color:var(--cyan); position:absolute; left:3px; top:4px}
+  .snapdocs b{color:#cdeaff}
   .scorebar{display:flex; gap:14px; font-size:12px; color:var(--dim); margin:8px 0}
   .scorebar b{color:var(--goldh); font-size:16px}
   .scoremath{border:3px solid var(--line); background:var(--panel); margin:8px 0 2px}
@@ -139,7 +145,7 @@
     <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px">
       <h1 style="color:var(--gold); font-size:18px">Precision &amp; Recall<span style="color:var(--text)"> — The Angler's Dilemma</span></h1>
       <div class="readout" style="gap:16px">
-        <span>Round <b id="roundNo">1</b>/5</span>
+        <span id="roundTag">Practice round</span>
         <span>Catch: <b id="targetName">—</b></span>
         <span>Score <b id="score">0</b></span>
       </div>
@@ -255,6 +261,7 @@
     <div class="scorebar">
       <span>This cast: <b id="roundScore">0</b></span>
       <span>Total: <b id="totalScore">0</b></span>
+      <span id="practiceNote" style="display:none; color:var(--cyan)">practice — not counted</span>
     </div>
 
     <div class="scoremath" id="scoreMath"></div>
@@ -286,6 +293,8 @@
     </div>
 
     <div class="insight" id="insight"></div>
+
+    <div class="snapdocs" id="snapdocs" style="display:none"></div>
 
     <div class="actions">
       <button class="ghost" id="retry">↺ Re-cast this round</button>
@@ -394,6 +403,35 @@ const ROUNDS = [
     ]
   },
 ];
+
+// Real-world bridge shown after each scored round (keyed by round name; practice round has none).
+// DRAFT COPY — mapping each cost regime to a Snapdocs document-modeling use case. Refine freely.
+const SNAPDOCS = {
+  "Bluegill": { title:"Routine document classification",
+    bullets:[
+      "Sorting everyday closing docs into the right bucket — a misfile and a missed file cost about the same (a human untangles it either way).",
+      "No single mistake is a catastrophe, so there's no reason to skew one way.",
+      "This is the <b>balanced / F1</b> world: tune for the best precision–recall blend, not one extreme."
+    ]},
+  "Trophy Bass": { title:"Auto-filling a field with no human in the loop",
+    bullets:[
+      "When the model writes an extracted value straight into the loan file, a <b>wrong</b> value propagates downstream and is costly to unwind.",
+      "A miss is cheap — a human just keys it in. So only auto-accept when confidence is high; route the rest to review.",
+      "High stakes on wrong answers → optimize for <b>precision</b> (a clean bucket), even if recall drops."
+    ]},
+  "Invasive Lionfish": { title:"Catching a missing signature or notary stamp before a loan funds",
+    bullets:[
+      "A document that slips through unsigned is a <b>defective loan</b> — buyback risk and legal exposure. A disaster.",
+      "Over-flagging a few clean docs for a quick human glance is cheap by comparison.",
+      "When misses are the expensive mistake → optimize for <b>recall</b> (a full bucket) and tolerate extra review."
+    ]},
+  "Rare Sturgeon": { title:"Finding the rare exception doc in a stack of thousands",
+    bullets:[
+      "Fraud flags, an unusual rider, one odd page in a 400-page package — the target is a needle in a haystack.",
+      "A model that says \"nothing here\" scores ~99% <b>accuracy</b> and is useless. Accuracy lies when the target is rare.",
+      "Judge it on <b>precision &amp; recall</b> (did we actually find the needles?), never on accuracy alone."
+    ]}
+};
 
 //////////////////// SPRITES ////////////////////
 // head faces right. B=body, T=tail, D=dorsal, A=anal, s=stripe, M=mouth,
@@ -506,10 +544,12 @@ function genFish(){
   place(R.nT,R.target,R.targetX,true);
   place(R.nO,R.other,R.otherX,false);
 }
+// round 0 is an unscored practice round; rounds 1..4 are the four that count
+function roundLabel(){ return roundIdx===0 ? "Practice round" : "Round "+roundIdx+" of 4"; }
 function startRound(){
   const R=ROUNDS[roundIdx];
   cast=false; centerDepth=20; boatX=50; tool=TOOLS[1];
-  $("roundNo").textContent=roundIdx+1;
+  $("roundTag").textContent=roundLabel();
   $("targetName").textContent=R.name;
   $("score").textContent=total;
   $("depth").value=20; $("depth").disabled=false;
@@ -520,7 +560,7 @@ function startRound(){
   $("legTxtO").textContent=R.junkName;
   $("swT").style.background=R.color;
   // mission card
-  $("introName").textContent="Round "+(roundIdx+1)+" — "+R.name;
+  $("introName").textContent=roundLabel()+" — "+R.name;
   $("introSub").textContent=R.sub;
   $("introBrief").innerHTML=R.brief.map(b=>`<li>${b}</li>`).join("");
   $("scT").textContent=R.name; $("scT2").textContent=R.name; $("scO").textContent=R.junkName;
@@ -641,7 +681,7 @@ function doCast(){
   }
   const R=ROUNDS[roundIdx];
   const roundScore = R.wTP*TP - R.wFP*FP - R.wFN*FN;
-  total += roundScore;
+  if(roundIdx>0) total += roundScore;   // practice round (idx 0) does not count toward the season total
   const n=TP+FP+FN+TN;
   const precision = (TP+FP)? TP/(TP+FP) : null;
   const recall    = (TP+FN)? TP/(TP+FN) : null;
@@ -657,12 +697,13 @@ function doCast(){
 
 function showResults(){
   const R=ROUNDS[roundIdx], L=lastResult;
-  $("resName").textContent="Round "+(roundIdx+1)+" — "+R.name;
+  $("resName").textContent=roundLabel()+" — "+R.name;
   $("stars").textContent=stars(L.roundScore,R.par);
   $("resSub").textContent=R.sub;
   $("roundScore").textContent=(L.roundScore>=0?"+":"")+L.roundScore;
   $("totalScore").textContent=total;
   $("score").textContent=total;
+  $("practiceNote").style.display = roundIdx===0 ? "inline" : "none";
   // explicit per-fish score arithmetic (weights come from the round, so −25 Bass etc. render automatically)
   const sgn=n=>(n>=0?"+":"−")+Math.abs(n);
   $("scoreMath").innerHTML =
@@ -685,6 +726,13 @@ function showResults(){
   $("mAcc").textContent=pct(L.accuracy);
   $("mF1").textContent=pct(L.f1);
   $("insight").innerHTML=makeInsight(R,L);
+  const sd=SNAPDOCS[R.name];
+  if(sd){
+    $("snapdocs").style.display="block";
+    $("snapdocs").innerHTML=`<h4>📄 At Snapdocs: ${sd.title}</h4><ul>${sd.bullets.map(b=>`<li>${b}</li>`).join("")}</ul>`;
+  }else{
+    $("snapdocs").style.display="none";
+  }
   $("next").textContent = (roundIdx===ROUNDS.length-1) ? "See season results ▶" : "Next round ▶";
   drawChart();
   show("resOv");
@@ -830,7 +878,7 @@ tank.onclick=e=>{
   $("depth").value=centerDepth; $("boatX").value=boatX; updateBandLabel();
 };
 $("retry").onclick=()=>{
-  total-=lastResult.roundScore; $("score").textContent=total;
+  if(roundIdx>0) total-=lastResult.roundScore; $("score").textContent=total;
   cast=false; $("cast").disabled=false; $("depth").disabled=false; $("boatX").disabled=false;
   for(const f of fish) f.caught=false;
   hideAll();
