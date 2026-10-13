@@ -307,7 +307,7 @@
       <div style="flex:1; min-width:240px">
         <p>Every cast is a dot: <b>precision</b> across, <b>recall</b> up. Notice how the <i>same</i> angler had to sit in different corners of this plot depending on what each round's mistakes cost.</p>
         <p style="color:var(--dim)">• Fines for wrong fish → you drift <b>right</b> (high precision, narrow band).<br>• Disaster for misses → you drift <b>up</b> (high recall, wide band).<br>• Rare fish → accuracy lied; precision &amp; recall told the truth.</p>
-        <p><b style="color:var(--goldh)">That's the whole lesson:</b> a tool (or a threshold) isn't "good" or "bad" on its own. It's good <i>for a cost structure</i>.</p>
+        <p><b style="color:var(--goldh)">That's the whole lesson:</b> a tool (or a model) isn't "good" or "bad" on its own. It's good <i>for a cost structure</i>.</p>
       </div>
     </div>
     <div class="panel" id="lbPanel" style="margin-top:14px; display:none">
@@ -360,7 +360,7 @@ const ROUNDS = [
     target:{mean:24,sd:7}, other:{mean:35,sd:7}, targetX:{mean:46,sd:16}, otherX:{mean:54,sd:26}, nT:16, nO:20,
     wTP:10, wFP:5, wFN:5, regime:"balanced",
     brief:[
-      "Bluegill and junk fish now mingle at similar depths.",
+      "Bluegill and junk fish mingle at similar depths.",
       "Widen your band → you grab junk. Narrow it → you miss bluegill.",
       "You can't have it all. Welcome to the <b>tradeoff</b>."
     ]
@@ -371,7 +371,7 @@ const ROUNDS = [
     brief:[
       "Keeping a protected fish is a brutal fine (−25). Missing a bass barely stings (−2).",
       "Bass stack in a tight, narrow column; protected fish drift loosely all around them.",
-      "Go surgical — a tall, narrow <b>Spear</b> threads the column. A wide cast just rakes in fines.",
+      "Go surgical — A wide cast just rakes in fines.",
       "When wrong catches are this costly, chase a <b>CLEAN bucket (precision)</b>."
     ]
   },
