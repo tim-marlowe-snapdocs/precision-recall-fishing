@@ -409,14 +409,14 @@ const ROUNDS = [
 const SNAPDOCS = {
   "Bluegill": { title:"Routine document classification",
     bullets:[
-      "Sorting everyday closing docs into the right bucket — a misfile and a missed file cost about the same (a human untangles it either way).",
+      "Sorting everyday closing docs into the right bucket — both misfiled documents and non-filed documents cost about the same (a human untangles it either way).",
       "No single mistake is a catastrophe, so there's no reason to skew one way.",
       "This is the <b>balanced / F1</b> world: tune for the best precision–recall blend, not one extreme."
     ]},
-  "Trophy Bass": { title:"Auto-filling a field with no human in the loop",
+  "Trophy Bass": { title:"Data Extraction with no human in the loop",
     bullets:[
-      "When the model writes an extracted value straight into the loan file, a <b>wrong</b> value propagates downstream and is costly to unwind.",
-      "A miss is cheap — a human just keys it in. So only auto-accept when confidence is high; route the rest to review.",
+      "When the model extracts the wrong value from the document and the error makes it into the loan file, a <b>wrong</b> value propagates downstream and is costly to unwind.",
+      "Failing to extract a field is cheap — a human just keys it in. So only auto-accept when confidence is high; route the rest to review.",
       "High stakes on wrong answers → optimize for <b>precision</b> (a clean bucket), even if recall drops."
     ]},
   "Invasive Lionfish": { title:"Catching a missing signature or notary stamp before a loan funds",
@@ -425,11 +425,11 @@ const SNAPDOCS = {
       "Over-flagging a few clean docs for a quick human glance is cheap by comparison.",
       "When misses are the expensive mistake → optimize for <b>recall</b> (a full bucket) and tolerate extra review."
     ]},
-  "Rare Sturgeon": { title:"Finding the rare exception doc in a stack of thousands",
+  "Rare Sturgeon": { title:"Finding the Error in a Closing",
     bullets:[
-      "Fraud flags, an unusual rider, one odd page in a 400-page package — the target is a needle in a haystack.",
+      "When reviewing closings for errors, the vast majority of documents are correctly executed — the targetted error is a needle in a haystack.",
       "A model that says \"nothing here\" scores ~99% <b>accuracy</b> and is useless. Accuracy lies when the target is rare.",
-      "Judge it on <b>precision &amp; recall</b> (did we actually find the needles?), never on accuracy alone."
+      "Judge performance on <b>precision &amp; recall</b> (did we actually find the needles?), never on accuracy alone."
     ]}
 };
 
