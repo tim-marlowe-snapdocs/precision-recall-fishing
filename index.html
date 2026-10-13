@@ -93,6 +93,8 @@
   .chip.good{border-color:#2d6a33} .chip.good em{color:var(--green)}
   .chip.bad{border-color:#7a2b2e} .chip.bad em{color:var(--red)}
   .chip.warn{border-color:#7a6321} .chip.warn em{color:var(--gold)}
+  .scoreline.hud{margin:10px 0 0; border-top:3px dotted var(--line); padding-top:10px; align-items:center}
+  .scoreline.hud .hudlbl{color:var(--goldh); font-size:11px; font-weight:bold; letter-spacing:1px; text-transform:uppercase; margin-right:2px}
   .tip{border-left:5px solid var(--gold); padding:8px 11px; background:#1a1403; font-size:12px; color:var(--goldh); line-height:1.5; margin:12px 0; letter-spacing:0; text-transform:none}
   .matrix{border-collapse:collapse; margin:10px 0; font-size:12px}
   .matrix td,.matrix th{border:3px solid var(--line); padding:8px 12px; text-align:center}
@@ -193,6 +195,13 @@
           <p class="an">Narrow &amp; aimed = cleaner bucket, but you miss some. Cast wide = you get them all, plus junk. You usually can't have both.</p>
         </div>
       </div>
+    </div>
+
+    <div class="scoreline hud" id="hudScore">
+      <span class="hudlbl">This round's points:</span>
+      <span class="chip good">✅ Keep a <b id="hudT">fish</b> <em>+<span id="hudTP">10</span></em></span>
+      <span class="chip bad">❌ Keep a <b id="hudO">junk</b> <em>−<span id="hudFP">5</span></em></span>
+      <span class="chip warn">💨 Let a <b id="hudT2">fish</b> escape <em>−<span id="hudFN">5</span></em></span>
     </div>
   </div>
 </div>
@@ -516,6 +525,8 @@ function startRound(){
   $("introBrief").innerHTML=R.brief.map(b=>`<li>${b}</li>`).join("");
   $("scT").textContent=R.name; $("scT2").textContent=R.name; $("scO").textContent=R.junkName;
   $("scTP").textContent=R.wTP; $("scFP").textContent=R.wFP; $("scFN").textContent=R.wFN;
+  $("hudT").textContent=R.name; $("hudT2").textContent=R.name; $("hudO").textContent=R.junkName;
+  $("hudTP").textContent=R.wTP; $("hudFP").textContent=R.wFP; $("hudFN").textContent=R.wFN;
   drawBig("introSprite", SPR[R.sprite], PAL[R.sprite]);
   const regimeMsg={
     balanced:"⚖️ Both mistakes cost the same here — aim for a clean AND full bucket.",
@@ -596,11 +607,16 @@ function draw(){
   }
 
   // catch box drawn ON TOP of the fish so the selection is always visible
-  g.fillStyle="rgba(255,203,61,.20)";
-  g.fillRect(pxLo,yLo,pxHi-pxLo,yHi-yLo);
-  g.fillStyle="#ffcb3d";
-  for(let x=pxLo;x<pxHi;x+=8){ g.fillRect(x,yLo-1,5,2); g.fillRect(x,yHi-1,5,2); }
-  for(let y=yLo;y<yHi;y+=8){ g.fillRect(pxLo-1,y,2,5); g.fillRect(pxHi-1,y,2,5); }
+  const bxw=pxHi-pxLo, bxh=yHi-yLo, BT=3;
+  g.fillStyle="rgba(255,203,61,.22)";
+  g.fillRect(pxLo,yLo,bxw,bxh);
+  // bold solid frame (dark backing + bright gold) so it reads clearly above the fish
+  g.fillStyle="#1a1403";
+  g.fillRect(pxLo-BT-1,yLo-BT-1,bxw+2*(BT+1),BT+1); g.fillRect(pxLo-BT-1,yHi+1,bxw+2*(BT+1),BT+1);
+  g.fillRect(pxLo-BT-1,yLo-BT-1,BT+1,bxh+2*(BT+1)); g.fillRect(pxHi+1,yLo-BT-1,BT+1,bxh+2*(BT+1));
+  g.fillStyle="#ffd84d";
+  g.fillRect(pxLo-1,yLo-1,bxw+2,BT); g.fillRect(pxLo-1,yHi-BT+1,bxw+2,BT);
+  g.fillRect(pxLo-1,yLo-1,BT,bxh+2);  g.fillRect(pxHi-BT+1,yLo-1,BT,bxh+2);
 
   // catch-box tag
   g.fillStyle="#ffcb3d"; g.font="11px 'Courier New'"; g.textBaseline="bottom";
