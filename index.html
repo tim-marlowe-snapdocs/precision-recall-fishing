@@ -316,7 +316,7 @@
       <div style="flex:1; min-width:240px">
         <p>Every cast is a dot: <b>precision</b> across, <b>recall</b> up. Notice how the <i>same</i> angler had to sit in different corners of this plot depending on what each round's mistakes cost.</p>
         <p style="color:var(--dim)">• Fines for wrong fish → you drift <b>right</b> (high precision, narrow band).<br>• Disaster for misses → you drift <b>up</b> (high recall, wide band).<br>• Rare fish → accuracy lied; precision &amp; recall told the truth.</p>
-        <p><b style="color:var(--goldh)">That's the whole lesson:</b> a tool (or a model) isn't "good" or "bad" on its own. It's good <i>for a cost structure</i>.</p>
+        <p><b style="color:var(--goldh)">That's the whole lesson:</b> a tool (or a model) isn't "good" or "bad" on its own. Every modeled decision has a tradeoff, and models are best used with explicit knowledge of that tradeoff.</p>
       </div>
     </div>
     <div class="panel" id="lbPanel" style="margin-top:14px; display:none">
@@ -385,7 +385,7 @@ const ROUNDS = [
     ]
   },
   { name:"Invasive Lionfish", junkName:"Native Fish", sprite:"lionfish", color:"#d6734a", par:23, sub:"Eradication Order",
-    target:{mean:26,sd:9}, other:{mean:32,sd:8}, targetX:{mean:50,sd:30}, otherX:{mean:50,sd:14}, nT:18, nO:20,
+    target:{mean:26,sd:9}, other:{mean:32,sd:8}, targetX:{mean:50,sd:25}, otherX:{mean:50,sd:14}, nT:18, nO:20,
     wTP:8, wFP:2, wFN:12, regime:"recall",
     brief:[
       "Every lionfish left behind breeds disaster (−12). Scooping a native fish is cheap (−2).",
@@ -393,8 +393,8 @@ const ROUNDS = [
       "When misses are this expensive, chase a <b>FULL bucket (recall)</b> and tolerate the junk."
     ]
   },
-  { name:"Rare Sturgeon", junkName:"Common Fish", sprite:"sturgeon", color:"#93a07c", par:26, sub:"Needle in a Haystack",
-    target:{mean:20,sd:5}, other:{mean:34,sd:14}, targetX:{mean:46,sd:13}, otherX:{mean:54,sd:26}, nT:5, nO:55,
+  { name:"Rare Sturgeon", junkName:"Common Fish", sprite:"sturgeon", color:"#93a07c", par:12, sub:"Needle in a Haystack",
+    target:{mean:20,sd:5}, other:{mean:34,sd:14}, targetX:{mean:46,sd:13}, otherX:{mean:54,sd:26}, nT:4, nO:55,
     wTP:25, wFP:6, wFN:12, regime:"imbalance",
     brief:[
       "Just a handful of sturgeon hidden in a swarm of common fish.",
@@ -751,7 +751,7 @@ function makeInsight(R,L){
     return `You swept up the invaders — recall <b>${pct(Rec)}</b>. When misses are catastrophic, casting wide for a <b>full bucket (recall)</b> is right, junk be damned. Well played.`;
   }
   if(R.regime==="imbalance"){
-    return `Look closely: <b>accuracy = ${pct(L.accuracy)}</b> looks amazing — but catching <i>nothing</i> would have scored about <b>${Math.round(doNothingAcc*100)}%</b> accuracy too, because sturgeon are so rare! That's why accuracy lies when one kind of fish is rare. Your real story is <b>precision ${pct(P)}</b> / <b>recall ${pct(Rec)}</b>.`;
+    return `Look closely: <b>accuracy = ${pct(L.accuracy)}</b> looks amazing — but catching <i>nothing</i> would have scored about <b>${Math.round(doNothingAcc*100)}%</b> accuracy too, as letting most fish go would have been the right call! That's why accuracy lies when one kind of fish is rare. Your real story is <b>precision ${pct(P)}</b> / <b>recall ${pct(Rec)}</b>.`;
   }
   // balanced
   if(P!==null && Rec!==null){
